@@ -51,12 +51,13 @@ import sys
 from collections import OrderedDict
 from IPython.display import display
 from ipywidgets import VBox
+from ipywidgets import Image as ipyImage
 from numpy import arange, issubdtype, array, column_stack, shape, asarray
 from .figure import Figure
 from .scales import Scale, LinearScale, Mercator
 from .axes import Axis
 from .marks import (
-        Lines, Scatter, Hist, Bars, OHLC, Pie, Map,
+        Lines, Scatter, Hist, Bars, OHLC, Pie, Map, Image,
         Label, HeatMap, GridHeatMap, topo_load, Boxplot,
         _check_scaled, _get_scale_name
     )
@@ -573,7 +574,8 @@ def _draw_mark(mark_type, options={}, axes_options={}, **kwargs):
     fig = kwargs.pop('figure', current_figure())
     scales = kwargs.pop('scales', {})
     update_context = kwargs.pop('update_context', True)
-
+    old_context = {k: v for k, v in _context['scales'].items()}
+    print scales
     # Going through the list of data attributes
     for name, traitlet in mark_type.class_traits(scaled=_check_scaled).items():
         scale_name = _get_scale_name(traitlet)
@@ -611,8 +613,13 @@ def _draw_mark(mark_type, options={}, axes_options={}, **kwargs):
                 _context['scales'][dimension] = scales[scale_name]
         else:
             scales[scale_name] = _context['scales'][dimension]
-
-    mark = mark_type(scales=scales, **kwargs)
+    print scales
+    try:
+        mark = mark_type(scales=scales, **kwargs)
+    except:
+        # Revert the changes to the scale context
+        _context['scales'] = old_context
+        raise
     _context['last_mark'] = mark
     fig.marks = [m for m in fig.marks] + [mark]
     if kwargs.get('axes', True):
@@ -706,6 +713,46 @@ def plot(*args, **kwargs):
             return _draw_mark(Lines, **kwargs)
     else:
         return _draw_mark(Lines, **kwargs)
+
+
+def imshow(image, format='ipyimage', **kwargs):
+    """Draw an image in the current context figure.
+
+    Parameters
+    ----------
+    image: image data 
+        Image data, depending on the passed format, can be one of:
+            - an instance of an ipywidgets Image
+            - a file name
+            - an raw byte string
+    format: {'ipyimage', 'filename', 'raw'}
+        type of the input argument
+    options: dict (default: {})
+        Options for the scales to be created. If a scale labeled 'x' is
+        required for that mark, options['x'] contains optional keyword
+        arguments for the constructor of the corresponding scale type.
+    axes_options: dict (default: {})
+        Options for the axes to be created. If an axis labeled 'x' is required
+        for that mark, axes_options['x'] contains optional keyword arguments
+        for the constructor of the corresponding axis type.
+    """
+    if format == 'ipyimage':
+        ipyimage = image
+    elif format == 'filename':
+        with open(image, 'rb') as f:
+            data = f.read()
+            ipyimage = ipyImage(value=data)
+    elif format == 'raw':
+        ipyimage = ipyImage(value=image)
+    kwargs['image'] = ipyimage
+    # These are necessary for _draw_mark to know the default scales dtype
+    kwargs.setdefault('x0', 0.)
+    kwargs.setdefault('y0', 0.)
+    kwargs.setdefault('x1', 1.)
+    kwargs.setdefault('y1', 1.)
+
+    return _draw_mark(Image, **kwargs)
+
 
 def ohlc(*args, **kwargs):
     """Draw OHLC bars or candle bars in the current context figure.

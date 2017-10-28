@@ -1472,10 +1472,14 @@ class Image(Mark):
     _view_name = Unicode('Image').tag(sync=True)
     _model_name = Unicode('ImageModel').tag(sync=True)
     image = Instance(widgets.Image).tag(sync=True, **widget_serialization)
-    x0 = (Float(0.0) | Date() | Unicode()).tag(sync=True)
-    y0 = (Float(0.0) | Date() | Unicode()).tag(sync=True)
-    x1 = (Float(1.0) | Date() | Unicode()).tag(sync=True)
-    y1 = (Float(1.0) | Date() | Unicode()).tag(sync=True)
+    x0 = (Float(0.0) | Date() | Unicode()).tag(sync=True, scaled='x',
+                                               rtype='Number')
+    y0 = (Float(0.0) | Date() | Unicode()).tag(sync=True, scaled='y',
+                                               rtype='Number')
+    x1 = (Float(1.0) | Date() | Unicode()).tag(sync=True, scaled='x',
+                                               rtype='Number')
+    y1 = (Float(1.0) | Date() | Unicode()).tag(sync=True, scaled='y',
+                                               rtype='Number')
     scales_metadata = Dict({
         'x': {'orientation': 'horizontal', 'dimension': 'x'},
         'y': {'orientation': 'vertical', 'dimension': 'y'},
