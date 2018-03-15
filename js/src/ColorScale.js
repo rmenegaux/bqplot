@@ -30,7 +30,7 @@ var ColorScale = scale.Scale.extend({
     },
 
     create_d3_scale: function(){
-        this.scale = d3.scale.linear();
+        this.scale = d3.scale.linear().interpolate(d3.interpolateLab);
     },
 
     create_event_listeners: function() {
